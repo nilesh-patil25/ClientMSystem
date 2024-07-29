@@ -76,26 +76,21 @@ namespace ClientMSystem.Controllers
         }
 
         //*****************************************************************************SignUp****************************************
-        [AcceptVerbs("Post","Get")]
+        [AcceptVerbs("Post", "Get")]
         public IActionResult UserNameIsExits(string Uname)
         {
-           try
-            {
-                var data = context.signUps.Where(e => e.Username == Uname).SingleOrDefault();
-                if (data != null)
-                {
-                    return Json($"userName {Uname} already Exits");
+            var data = context.signUps.SingleOrDefault(e => e.Username == Uname);
 
-                }
-                else
-                {
-                    return Json(true);
-                }
-            }catch(Exception ex)
+            if (data != null)
             {
-                throw ex;
+                return Json($"Username {Uname} already exists");
+            }
+            else
+            {
+                return Json(true);
             }
         }
+
 
         public IActionResult SignUp()
         {
