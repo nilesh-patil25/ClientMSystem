@@ -32,45 +32,34 @@ namespace ClientMSystem.Controllers
         public IActionResult Login(SignUp model)
         {
             // var userId = HttpContext.Session.GetInt32("UserId");
-            try
-            {
-                var data = context.signUps.FirstOrDefault(e => e.Username == model.Username);
+            var data = context.signUps.FirstOrDefault(e => e.Username == model.Username);
 
-                if (data != null)
+            if (data != null)
+            {
+                bool isValid = (data.Username == model.Username && data.Password == model.Password);
+                if (isValid)
                 {
-                    bool isValid = (data.Username == model.Username && data.Password == model.Password);
-                    if (isValid)
-                    {
-                        var identity = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, model.Username) },
+                    var identity = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, model.Username) },
                         CookieAuthenticationDefaults.AuthenticationScheme);
 
-                        var principal = new ClaimsPrincipal(identity);
-                        HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
-                        HttpContext.Session.SetInt32("UserId", data.ID); // store imp info in session
+                    var principal = new ClaimsPrincipal(identity);
+                    HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+                    HttpContext.Session.SetInt32("UserId", data.ID); // store imp info in session
 
-                        return RedirectToAction("Index", "Home");
-                    }
-                    else
-                    {
-                        ViewBag.msg = "<div class='alert alert-danger alert-dismissible fade show' role='alert'> Invalid Email Or Password!! <button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\">\r\n    <span aria-hidden=\"true\">&times;</span>\r\n  </button>\r\n</div>";
-                        TempData["Errormessage"] = "Check Credentials";
-                        return View(model);
-
-                    }
+                    return RedirectToAction("Index", "Home");
                 }
                 else
                 {
-                    TempData["Errormessage"] = "UserName Not found";
+                    ViewBag.msg = "<div class='alert alert-danger alert-dismissible fade show' role='alert'> Invalid Email Or Password!! <button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\">\r\n    <span aria-hidden=\"true\">&times;</span>\r\n  </button>\r\n</div>";
+                    TempData["Errormessage"] = "Check Credentials";
                     return View(model);
-
                 }
-
             }
-            catch (Exception ex)
+            else
             {
-                throw ex;
+                TempData["Errormessage"] = "UserName Not found";
+                return View(model);
             }
-
         }
 
         public IActionResult LogOut()
