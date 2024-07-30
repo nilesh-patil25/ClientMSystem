@@ -42,38 +42,29 @@ namespace ClientMSystem.Controllers
         [HttpPost]
         public IActionResult Create(ClientDetail model)
         {
-            try
-            {
-                var userId = HttpContext.Session.GetInt32("UserId");
-                 
+            var userId = HttpContext.Session.GetInt32("UserId");
 
-                if (ModelState.IsValid && userId.HasValue)
-                {
-                    var rec = new ClientDetail()
-                    {
-                        //Id = model.Id,
-                        //UserId = model.UserId,
-                        UserId = userId.Value,
-                        Name = model.Name,
-                        ClientName = model.ClientName,
-                        IssuedDate = model.IssuedDate,
-                        DomainName = model.DomainName,
-                        Technology = model.Technology,
-                        Assigned = model.Assigned,
-                    };
-                    context.clientDetails.Add(rec);
-                    context.SaveChanges();
-                    TempData["Message"] = "Sheet Updated Successfully";
-                    return RedirectToAction("Index");
-                }
-                else
-                {
-                    TempData["Error"] = "Enter All Details";
-                    return View(model);
-                }
-            }catch(Exception ex)
+            if (ModelState.IsValid && userId.HasValue)
             {
-                throw ex;
+                var rec = new ClientDetail()
+                {
+                    UserId = userId.Value,
+                    Name = model.Name,
+                    ClientName = model.ClientName,
+                    IssuedDate = model.IssuedDate,
+                    DomainName = model.DomainName,
+                    Technology = model.Technology,
+                    Assigned = model.Assigned,
+                };
+                context.clientDetails.Add(rec);
+                context.SaveChanges();
+                TempData["Message"] = "Sheet Updated Successfully";
+                return RedirectToAction("Index");
+            }
+            else
+            {
+                TempData["Error"] = "Enter All Details";
+                return View(model);
             }
         }
 
