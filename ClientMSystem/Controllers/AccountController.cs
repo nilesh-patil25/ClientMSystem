@@ -99,37 +99,31 @@ namespace ClientMSystem.Controllers
         [HttpPost]
         public IActionResult SignUp(SignUp model)
         {
-            try
+            if (ModelState.IsValid)
             {
-                if (ModelState.IsValid)
+                var data = new SignUp
                 {
-                    var data = new SignUp
-                    {
-                        FirstName = model.FirstName,
-                        LastName = model.LastName,
-                        Username = model.Username,
-                        Email = model.Email,
-                        Mobile = model.Mobile,
-                        Password = model.Password,
-                        ConformPassword = model.ConformPassword
+                    FirstName = model.FirstName,
+                    LastName = model.LastName,
+                    Username = model.Username,
+                    Email = model.Email,
+                    Mobile = model.Mobile,
+                    Password = model.Password,
+                    ConformPassword = model.ConformPassword
+                };
 
-                    };
-                    context.signUps.Add(data);
-                    context.SaveChanges();
-                    TempData["SuccessMessage"] = "User Registration Successfully!! Please Login!";
-                    return RedirectToAction("Login");
-                }
-                else
-                {
-                    TempData["errorMessage"] = "Fill The All Fileds";
-                    return View(model);
-                }
-            }catch(Exception ex)
-            {
-                throw ex;
+                context.signUps.Add(data);
+                context.SaveChanges();
+                TempData["SuccessMessage"] = "User Registration Successfully!! Please Login!";
+                return RedirectToAction("Login");
             }
-            
+            else
+            {
+                TempData["errorMessage"] = "Fill in all the fields.";
+                return View(model);
+            }
         }
+
     }
 }
 
