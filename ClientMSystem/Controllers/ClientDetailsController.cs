@@ -105,31 +105,36 @@ namespace ClientMSystem.Controllers
         [HttpPost]
         public IActionResult Edit(ClientDetail model)
         {
-            try
+            if (!ModelState.IsValid)
             {
-                var rec = new ClientDetail()
-                {
-                    Id = model.Id,
-                    UserId = model.UserId,
-                    Name = model.Name,
-                    ClientName = model.ClientName,
-                    IssuedDate = model.IssuedDate,
-                    DomainName = model.DomainName,
-                    Technology = model.Technology,
-                    Assigned = model.Assigned,
+                // Handle the case when model validation fails
+                TempData["Error"] = "Please correct the errors and try again.";
+                return View(model);
+            }
 
-                };
-                context.clientDetails.Update(rec);
-                context.SaveChanges();
-                TempData["Error"] = "Sheet Updated Successfully";
+            var rec = context.clientDetails.SingleOrDefault(e => e.Id == model.Id);
+            if (rec == null)
+            {
+                TempData["Error"] = "Record not found";
                 return RedirectToAction("Index");
+            }
 
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
+            // Update the existing record with the new values
+            rec.UserId = model.UserId;
+            rec.Name = model.Name;
+            rec.ClientName = model.ClientName;
+            rec.IssuedDate = model.IssuedDate;
+            rec.DomainName = model.DomainName;
+            rec.Technology = model.Technology;
+            rec.Assigned = model.Assigned;
+
+            context.clientDetails.Update(rec);
+            context.SaveChanges();
+
+            TempData["Error"] = "Sheet Updated Successfully";
+            return RedirectToAction("Index");
         }
+
     }
 
 }
