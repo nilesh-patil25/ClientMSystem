@@ -70,19 +70,22 @@ namespace ClientMSystem.Controllers
 
         public IActionResult Delete(int id)
         {
-            try
+            var rec = context.timeSheets.SingleOrDefault(e => e.Id == id);
+
+            if (rec != null)
             {
-                var rec = context.timeSheets.SingleOrDefault(e => e.Id == id);
                 context.timeSheets.Remove(rec);
                 context.SaveChanges();
-                TempData["Error"] = "Update Delete Successfully";
-                return RedirectToAction("Index");
+                TempData["Success"] = "Record deleted successfully"; // Changed TempData key from "Error" to "Success"
             }
-            catch (Exception ex)
+            else
             {
-                throw ex;
+                TempData["Error"] = "Record not found"; // Added a message for when the record isn't found
             }
+
+            return RedirectToAction("Index");
         }
+
 
         public IActionResult Edit(int id)
         {
