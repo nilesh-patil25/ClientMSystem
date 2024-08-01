@@ -36,44 +36,37 @@ namespace ClientMSystem.Controllers
         {
             return View();
         }
-
         [HttpPost]
         public IActionResult Create(TimeSheet model)
         {
             var userId = HttpContext.Session.GetInt32("UserId");
 
-            try
+            if (ModelState.IsValid && userId.HasValue)
             {
-                if (ModelState.IsValid && userId.HasValue)
+                var res = new TimeSheet()
                 {
-                    var res = new TimeSheet()
-                    {
-                        Date = model.Date,
-                        Module = model.Module,
-                        ExpectedTaskToCompleted = model.ExpectedTaskToCompleted,
-                        ExpectedHours = model.ExpectedHours,
-                        CompletedTasks = model.CompletedTasks,
-                        UnPlannedTask = model.UnPlannedTask,
-                        ActualHours = model.ActualHours,
-                        CommentsForAnyDealy = model.CommentsForAnyDealy,
-                        QuestionsActionsToBeAsked = model.QuestionsActionsToBeAsked,
-                    };
-                    context.timeSheets.Add(res);
-                    context.SaveChanges();
-                    TempData["error"] = "Sheet Updated Successfully";
-                    return RedirectToAction("Index");
-                }
-                else
-                {
-                    TempData["Error"] = "Enter All Details";
-                    return View(model);
-                }
-            }catch(Exception ex)
-            {
-                throw ex;
+                    Date = model.Date,
+                    Module = model.Module,
+                    ExpectedTaskToCompleted = model.ExpectedTaskToCompleted,
+                    ExpectedHours = model.ExpectedHours,
+                    CompletedTasks = model.CompletedTasks,
+                    UnPlannedTask = model.UnPlannedTask,
+                    ActualHours = model.ActualHours,
+                    CommentsForAnyDealy = model.CommentsForAnyDealy,
+                    QuestionsActionsToBeAsked = model.QuestionsActionsToBeAsked,
+                };
+                context.timeSheets.Add(res);
+                context.SaveChanges();
+                TempData["Success"] = "Sheet Updated Successfully";  // Changed TempData key from "error" to "Success"
+                return RedirectToAction("Index");
             }
-            
+            else
+            {
+                TempData["Error"] = "Enter All Details";
+                return View(model);
+            }
         }
+
 
         public IActionResult Delete(int id)
         {
