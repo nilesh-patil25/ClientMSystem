@@ -109,34 +109,40 @@ namespace ClientMSystem.Controllers
         [HttpPost]
         public IActionResult Edit(TimeSheet model)
         {
-            try
+            if (ModelState.IsValid)
             {
-                var rec = new TimeSheet()
+                var existingRec = context.timeSheets.SingleOrDefault(e => e.Id == model.Id);
+
+                if (existingRec != null)
                 {
-                    Id = model.Id,
-                    Date = model.Date,
-                    Module = model.Module,
-                    ExpectedTaskToCompleted = model.ExpectedTaskToCompleted,
-                    ExpectedHours = model.ExpectedHours,
-                    CompletedTasks = model.CompletedTasks,
-                    UnPlannedTask = model.UnPlannedTask,
-                    ActualHours = model.ActualHours,
-                    CommentsForAnyDealy = model.CommentsForAnyDealy,
-                    QuestionsActionsToBeAsked = model.QuestionsActionsToBeAsked,
+                    existingRec.Date = model.Date;
+                    existingRec.Module = model.Module;
+                    existingRec.ExpectedTaskToCompleted = model.ExpectedTaskToCompleted;
+                    existingRec.ExpectedHours = model.ExpectedHours;
+                    existingRec.CompletedTasks = model.CompletedTasks;
+                    existingRec.UnPlannedTask = model.UnPlannedTask;
+                    existingRec.ActualHours = model.ActualHours;
+                    existingRec.CommentsForAnyDealy = model.CommentsForAnyDealy;
+                    existingRec.QuestionsActionsToBeAsked = model.QuestionsActionsToBeAsked;
 
-                };
-                context.timeSheets.Update(rec);
-                context.SaveChanges();
-                TempData["Error"] = "Sheet Updated Successfully";
+                    context.timeSheets.Update(existingRec);
+                    context.SaveChanges();
+                    TempData["Success"] = "Sheet updated successfully"; // Changed TempData key from "Error" to "Success"
+                }
+                else
+                {
+                    TempData["Error"] = "Record not found";
+                }
+
                 return RedirectToAction("Index");
-
             }
-            catch (Exception ex)
+            else
             {
-                throw ex;
+                TempData["Error"] = "Please provide valid data";
+                return View(model);
             }
-
         }
+
 
     }
 }
