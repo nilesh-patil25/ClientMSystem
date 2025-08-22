@@ -1,188 +1,126 @@
-﻿using ClientMSystem.Controllers;
 using ClientMSystem.Data;
 using ClientMSystem.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
 namespace ClientMSystem.Controllers
 {
-   
     public class AccountController : Controller
     {
-        private readonly ApplicationContext context;
-
+        private readonly ApplicationContext _context;
 
         public AccountController(ApplicationContext context)
         {
-            this.context = context;
+            _context = context;
         }
 
-      
+        [HttpGet]
         public IActionResult Login()
         {
             return View();
         }
 
         [HttpPost]
-        public IActionResult Login(SignUp model)
+        public async Task<IActionResult> Login(SignUp model)
         {
-            // var userId = HttpContext.Session.GetInt32("UserId");
-            var data = context.signUps.FirstOrDefault(e => e.Username == model.Username);
-
-            if (data != null)
+            if (!ModelState.IsValid)
             {
-                bool isValid = (data.Username == model.Username && data.Password == model.Password);
-                if (isValid)
-                {
-                    var identity = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, model.Username) },
-                        CookieAuthenticationDefaults.AuthenticationScheme);
-
-                    var principal = new ClaimsPrincipal(identity);
-                    HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
-                    HttpContext.Session.SetInt32("UserId", data.ID); // store imp info in session
-
-                    return RedirectToAction("Index", "Home");
-                }
-                else
-                {
-                    ViewBag.msg = "<div class='alert alert-danger alert-dismissible fade show' role='alert'> Invalid Email Or Password!! <button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\">\r\n    <span aria-hidden=\"true\">&times;</span>\r\n  </button>\r\n</div>";
-                    TempData["Errormessage"] = "Check Credentials";
-                    return View(model);
-                }
-            }
-            else
-            {
-                TempData["Errormessage"] = "UserName Not found";
+                TempData["ErrorMessage"] = "Invalid input. Please fill all fields correctly.";
                 return View(model);
             }
+
+            var user = await _context.signUps
+                .FirstOrDefaultAsync(u => u.Username == model.Username);
+
+            if (user == null)
+            {
+                TempData["ErrorMessage"] = "Username not found.";
+                return View(model);
+            }
+
+            if (user.Password != model.Password)
+            {
+                TempData["ErrorMessage"] = "Invalid password.";
+                return View(model);
+            }
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim("UserId", user.ID.ToString())
+            };
+
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
+
+            HttpContext.Session.SetInt32("UserId", user.ID);
+
+            return RedirectToAction("Index", "Home");
         }
 
-        public IActionResult LogOut()
+        [HttpPost]
+        public async Task<IActionResult> LogOut()
         {
-            
-            HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
-            var StoredCookies = Request.Cookies.Keys; // After Logout Delete the all cookies.
-            foreach(var cookie in StoredCookies)
+            foreach (var cookie in Request.Cookies.Keys)
             {
                 Response.Cookies.Delete(cookie);
             }
-            return RedirectToAction("Login", "Account");
+
+            return RedirectToAction("Login");
         }
 
-        //*****************************************************************************SignUp****************************************
-        [AcceptVerbs("Post", "Get")]
-        public IActionResult UserNameIsExits(string Uname)
+        [AcceptVerbs("Get", "Post")]
+        public async Task<IActionResult> UserNameIsExits(string uname)
         {
-            var data = context.signUps.SingleOrDefault(e => e.Username == Uname);
-
-            if (data != null)
-            {
-                return Json($"Username {Uname} already exists");
-            }
-            else
-            {
-                return Json(true);
-            }
+            var exists = await _context.signUps.AnyAsync(u => u.Username == uname);
+            return Json(exists ? $"Username '{uname}' is already taken." : (object)true);
         }
 
-
+        [HttpGet]
         public IActionResult SignUp()
         {
             return View();
         }
+
         [HttpPost]
-        public IActionResult SignUp(SignUp model)
+        public async Task<IActionResult> SignUp(SignUp model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                var data = new SignUp
-                {
-                    FirstName = model.FirstName,
-                    LastName = model.LastName,
-                    Username = model.Username,
-                    Email = model.Email,
-                    Mobile = model.Mobile,
-                    Password = model.Password,
-                    ConformPassword = model.ConformPassword
-                };
-
-                context.signUps.Add(data);
-                context.SaveChanges();
-                TempData["SuccessMessage"] = "User Registration Successfully!! Please Login!";
-                return RedirectToAction("Login");
-            }
-            else
-            {
-                TempData["errorMessage"] = "Fill in all the fields.";
+                TempData["ErrorMessage"] = "Please fill in all required fields.";
                 return View(model);
             }
-        }
 
-    }
-}
-
-//Admin Controller
-
-    public class AdminController : Controller
-    {
-        private readonly ApplicationContext context;
-
-        public AdminController(ApplicationContext context)
-        {
-            this.context = context;
-        }
-
-        public IActionResult AdminLogin()
-        {
-            return View();
-        }
-
-    [HttpPost]
-    
-    public IActionResult AdminLogin(AdminModel model)
-    {
-        if (ModelState.IsValid)
-        {
-            var adData = context.adminModel.FirstOrDefault(a => a.Username == model.Username && a.Password == model.Password);
-            if (adData != null)
+            var userExists = await _context.signUps.AnyAsync(u => u.Username == model.Username);
+            if (userExists)
             {
-                var identity = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, model.Username) },
-                     CookieAuthenticationDefaults.AuthenticationScheme);
-
-                var principal = new ClaimsPrincipal(identity);
-                HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
-                HttpContext.Session.SetInt32("UserId", adData.Id);  // store imp info in session
-
-
-                return RedirectToAction("Index", "Home");
-            }
-            else
-            {
-                ViewBag.msg = "<div class='alert alert-danger alert-dismissible fade show' role='alert'> Invalid Email Or Password!! <button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\">\r\n    <span aria-hidden=\"true\">&times;</span>\r\n  </button>\r\n</div>";
+                TempData["ErrorMessage"] = "Username already exists.";
                 return View(model);
             }
+
+            var newUser = new SignUp
+            {
+                FirstName = model.FirstName,
+                LastName = model.LastName,
+                Username = model.Username,
+                Email = model.Email,
+                Mobile = model.Mobile,
+                Password = model.Password, // Consider hashing in real-world apps
+                ConformPassword = model.ConformPassword
+            };
+
+            await _context.signUps.AddAsync(newUser);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Registration successful. Please log in.";
+            return RedirectToAction("Login");
         }
-        return View();
     }
-
-    public IActionResult LogOut()
-    {
-
-        HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-
-        var StoredCookies = Request.Cookies.Keys; // After Logout Delete the all cookies.
-        foreach (var cookie in StoredCookies)
-        {
-            Response.Cookies.Delete(cookie);
-        }
-        return RedirectToAction("Login", "Account");
-    }
-
-
 }
